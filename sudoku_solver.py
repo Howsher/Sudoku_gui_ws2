@@ -21,7 +21,7 @@ class SudokuCell(QLineEdit):
         self.setFixedSize(40, 40)
         self.setAlignment(Qt.AlignCenter)
         self.setMaxLength(1)
-        self.setFont(QFont("Arial", 14))
+        self.setFont(QFont("Arial", 14))  
         # Only allow numbers 1-9
         self.setValidator(lambda x: x.isdigit() and 1 <= int(x) <= 9 if x else True)
         
@@ -444,8 +444,11 @@ class SudokuWindow(QMainWindow):
         
         main_layout.addLayout(button_layout)
         
+        # Add spacer at the bottom to push everything to the top
+        main_layout.addStretch(1)
+        
         # Set window size
-        self.setMinimumSize(400, 500)
+        self.setMinimumSize(400, 500)  
 
     def solve_sudoku(self):
         board = self.board.get_board()
