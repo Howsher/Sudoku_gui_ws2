@@ -3,9 +3,10 @@
 
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QGridLayout, 
                               QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout,
-                              QLabel, QComboBox, QStatusBar, QMessageBox, QSizePolicy)
-from PySide6.QtCore import Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QFont, QColor
+                              QLabel, QComboBox, QStatusBar, QMessageBox, QSizePolicy,
+                              QCheckBox)
+from PySide6.QtCore import Qt, QTimer, Signal, Slot, QRectF
+from PySide6.QtGui import QFont, QColor, QPainter
 import sys
 import random
 import time
@@ -18,14 +19,19 @@ class SudokuCell(QLineEdit):
         self.row = row
         self.col = col
         self.original = False
+        self._show_candidates = False  # Initialize to False
+        self.possible_numbers = set(range(1, 10))
         self.setFixedSize(40, 40)
         self.setAlignment(Qt.AlignCenter)
         self.setMaxLength(1)
-        self.setFont(QFont("Arial", 14))  
-        # Only allow numbers 1-9
+        self.setFont(QFont("Arial", 14))
         self.setValidator(lambda x: x.isdigit() and 1 <= int(x) <= 9 if x else True)
+        self.textChanged.connect(self._on_text_changed)
         
         # Base style
+        self.updateStyle()
+    
+    def updateStyle(self):
         style = """
             QLineEdit {
                 font-size: 16px;
@@ -35,36 +41,63 @@ class SudokuCell(QLineEdit):
         
         # Add borders based on position
         borders = []
-        
-        # Top border
-        if row == 0:
+        if self.row == 0:
             borders.append("border-top: 3px solid black")
-        elif row % 3 == 0:
+        elif self.row % 3 == 0:
             borders.append("border-top: 2px solid black")
             
-        # Bottom border
-        if row == 8:
+        if self.row == 8:
             borders.append("border-bottom: 3px solid black")
             
-        # Left border
-        if col == 0:
+        if self.col == 0:
             borders.append("border-left: 3px solid black")
-        elif col % 3 == 0:
+        elif self.col % 3 == 0:
             borders.append("border-left: 2px solid black")
             
-        # Right border
-        if col == 8:
+        if self.col == 8:
             borders.append("border-right: 3px solid black")
             
-        # Add borders to style
         if borders:
             style += "; " + "; ".join(borders)
         
         style += "}"
         self.setStyleSheet(style)
+
+    def _on_text_changed(self, text):
+        self.valueChanged.emit(self.row, self.col, text)
+        self.update()  # Ensure repaint when text changes
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
         
-        # Connect signals
-        self.textChanged.connect(self._on_text_changed)
+        if not self.text() and self._show_candidates and self.possible_numbers:
+            painter = QPainter(self)
+            painter.setFont(QFont("Arial", 8))
+            painter.setPen(QColor("#808080"))
+            
+            cell_width = self.width() / 3
+            cell_height = self.height() / 3
+            
+            for num in range(1, 10):
+                if num in self.possible_numbers:
+                    row = (num - 1) // 3
+                    col = (num - 1) % 3
+                    x = col * cell_width + 2
+                    y = row * cell_height + cell_height - 2
+                    painter.drawText(QRectF(x, y - cell_height + 4, cell_width - 2, cell_height - 2), 
+                                   Qt.AlignCenter, str(num))
+
+    def update_possibilities(self, possible_nums):
+        old_possible = self.possible_numbers
+        self.possible_numbers = set(possible_nums)
+        if old_possible != self.possible_numbers:
+            self.update()
+
+    def set_show_candidates(self, show):
+        print(f"Cell {self.row},{self.col}: Setting show_candidates to {show}")  # Debug output
+        if self._show_candidates != show:
+            self._show_candidates = show
+            self.repaint()  # Force immediate repaint
 
     def setValidator(self, validator_func):
         super().setValidator(None)  # Clear existing validator
@@ -73,9 +106,6 @@ class SudokuCell(QLineEdit):
     def _validate(self, text, validator_func):
         if text and not validator_func(text):
             self.setText("")
-    
-    def _on_text_changed(self, text):
-        self.valueChanged.emit(self.row, self.col, text)
     
     def set_original(self, is_original):
         self.original = is_original
@@ -150,9 +180,18 @@ class SudokuBoard(QWidget):
             for j in range(9):
                 value = board[i][j]
                 self.cells[i][j].setText(str(value) if value != 0 else "")
+        self.update_all_possibilities()  # Update possibilities after setting board
+    
+    def clear_board(self):
+        for i in range(9):
+            for j in range(9):
+                self.cells[i][j].setText("")
+                self.cells[i][j].set_original(False)
+        self.update_all_possibilities()  # Update possibilities after clearing
     
     def _on_cell_changed(self, row, col, value):
         self.cellChanged.emit(row, col, value)
+        self.update_all_possibilities()  # Update possibilities when any cell changes
     
     def mark_original_cells(self):
         for i in range(9):
@@ -164,6 +203,7 @@ class SudokuBoard(QWidget):
         for i in range(9):
             for j in range(9):
                 self.cells[i][j].set_original(False)
+        self.update_all_possibilities()  # Update possibilities after clearing marks
     
     def highlight_conflicts(self):
         # Reset all highlights
@@ -241,6 +281,47 @@ class SudokuBoard(QWidget):
                     return True
         
         return False
+    
+    def get_possible_numbers(self, row, col):
+        board = self.get_board()
+        if board[row][col] != 0:  # Cell already has a number
+            return set()
+            
+        possible = set(range(1, 10))
+        
+        # Check row
+        for j in range(9):
+            if board[row][j] != 0:
+                possible.discard(board[row][j])
+                
+        # Check column
+        for i in range(9):
+            if board[i][col] != 0:
+                possible.discard(board[i][col])
+                
+        # Check 3x3 box
+        box_row, box_col = 3 * (row // 3), 3 * (col // 3)
+        for i in range(box_row, box_row + 3):
+            for j in range(box_col, box_col + 3):
+                if board[i][j] != 0:
+                    possible.discard(board[i][j])
+                    
+        return possible
+    
+    def update_all_possibilities(self):
+        board = self.get_board()
+        for i in range(9):
+            for j in range(9):
+                if not board[i][j]:  # Only update empty cells
+                    possible = self.get_possible_numbers(i, j)
+                    self.cells[i][j].update_possibilities(possible)
+
+    def set_show_candidates(self, show):
+        print(f"Board: Setting show_candidates to {show}")  # Debug output
+        for row in self.cells:
+            for cell in row:
+                cell.set_show_candidates(show)
+        self.update()  # Update the entire board
 
 class SudokuSolver:
     @staticmethod
@@ -387,6 +468,9 @@ class SudokuWindow(QMainWindow):
         self.setStatusBar(self.statusBar)
         self.statusBar.showMessage("Welcome to Sudoku Solver!")
         
+        # Create top controls layout
+        top_controls = QHBoxLayout()
+        
         # Create difficulty selector
         difficulty_layout = QHBoxLayout()
         difficulty_label = QLabel("Difficulty:")
@@ -394,14 +478,22 @@ class SudokuWindow(QMainWindow):
         self.difficulty_combo.addItems(["Easy", "Medium", "Hard"])
         difficulty_layout.addWidget(difficulty_label)
         difficulty_layout.addWidget(self.difficulty_combo)
-        difficulty_layout.addStretch()
+        top_controls.addLayout(difficulty_layout)
+        
+        top_controls.addStretch()
+        
+        # Add candidate mode checkbox
+        self.candidate_checkbox = QCheckBox("Show Candidates")
+        self.candidate_checkbox.setChecked(False)  # Initialize unchecked
+        self.candidate_checkbox.toggled.connect(self.toggle_candidates)
+        top_controls.addWidget(self.candidate_checkbox)
         
         # Create timer display
         self.timer_label = QLabel("Time: 00:00")
         self.timer_label.setAlignment(Qt.AlignRight)
-        difficulty_layout.addWidget(self.timer_label)
+        top_controls.addWidget(self.timer_label)
         
-        main_layout.addLayout(difficulty_layout)
+        main_layout.addLayout(top_controls)
 
         # Create Sudoku board
         self.board = SudokuBoard()
@@ -426,11 +518,6 @@ class SudokuWindow(QMainWindow):
         solve_button = QPushButton("Solve")
         solve_button.clicked.connect(self.solve_sudoku)
         button_layout.addWidget(solve_button)
-        
-        # Create hint button
-        hint_button = QPushButton("Hint")
-        hint_button.clicked.connect(self.give_hint)
-        button_layout.addWidget(hint_button)
         
         # Create validate button
         validate_button = QPushButton("Validate")
@@ -479,37 +566,18 @@ class SudokuWindow(QMainWindow):
         self.update_timer()
     
     def generate_puzzle(self):
+        self.clear_board()  # Clear the board first
         difficulty = self.difficulty_combo.currentText().lower()
         board, solution = SudokuSolver.generate_puzzle(difficulty)
         self.board.set_board(board)
         self.board.mark_original_cells()
         self.solution = solution
+        self.board.update_all_possibilities()  # Ensure possibilities are updated after generating
         self.statusBar.showMessage(f"Generated a new {difficulty} puzzle. Good luck!")
         
         # Reset and start timer
         self.elapsed_time = 0
         self.timer.start(1000)  # Update every second
-    
-    def give_hint(self):
-        if not self.solution:
-            # Try to solve the current board to get a solution
-            board = self.board.get_board()
-            if not SudokuSolver.is_board_valid(board):
-                self.statusBar.showMessage("Current board has conflicts! Please fix them first.")
-                self.board.highlight_conflicts()
-                return
-            
-            solution = self.solver.solve_with_copy(board)
-            if not solution:
-                self.statusBar.showMessage("No solution exists for this puzzle!")
-                return
-            
-            self.solution = solution
-        
-        if self.board.get_hint(self.solution):
-            self.statusBar.showMessage("Here's a hint to help you!")
-        else:
-            self.statusBar.showMessage("The puzzle is already complete!")
     
     def validate_board(self):
         has_conflicts = self.board.highlight_conflicts()
@@ -527,6 +595,13 @@ class SudokuWindow(QMainWindow):
         # Start timer if it's not running and a value was entered
         if value and not self.timer.isActive():
             self.timer.start(1000)
+    
+    def toggle_candidates(self, checked):  
+        print(f"Window: Toggle candidates to {checked}")  # Debug output
+        self.board.set_show_candidates(checked)
+        if checked:
+            self.board.update_all_possibilities()
+        self.board.repaint()  # Force immediate repaint of the entire board
     
     def update_timer(self):
         if self.timer.isActive():
