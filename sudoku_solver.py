@@ -4,12 +4,14 @@
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QGridLayout, 
                               QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout,
                               QLabel, QComboBox, QStatusBar, QMessageBox, QSizePolicy,
-                              QCheckBox)
+                              QCheckBox, QTextEdit, QInputDialog)
 from PySide6.QtCore import Qt, QTimer, Signal, Slot, QRectF
 from PySide6.QtGui import QFont, QColor, QPainter
 import sys
 import random
 import time
+import importlib
+import puzzles
 
 class SudokuCell(QLineEdit):
     valueChanged = Signal(int, int, str)
@@ -528,14 +530,22 @@ class SudokuWindow(QMainWindow):
         clear_button = QPushButton("Clear")
         clear_button.clicked.connect(self.clear_board)
         button_layout.addWidget(clear_button)
+
+        # Create import button
+        import_button = QPushButton("Import Puzzle")
+        import_button.clicked.connect(self.import_puzzle)
+        button_layout.addWidget(import_button)
         
         main_layout.addLayout(button_layout)
         
-        # Add spacer at the bottom to push everything to the top
-        main_layout.addStretch(1)
+        # Create output text box
+        self.output_text = QTextEdit()
+        self.output_text.setFixedHeight(175)  # About 1.75 inches
+        self.output_text.setReadOnly(True)  # Make it read-only
+        main_layout.addWidget(self.output_text)
         
         # Set window size
-        self.setMinimumSize(400, 500)  
+        self.setMinimumSize(400, 700)  
 
     def solve_sudoku(self):
         board = self.board.get_board()
@@ -604,12 +614,30 @@ class SudokuWindow(QMainWindow):
         self.board.repaint()  # Force immediate repaint of the entire board
     
     def update_timer(self):
-        if self.timer.isActive():
-            self.elapsed_time += 1
-        
+        self.elapsed_time += 1
         minutes = self.elapsed_time // 60
         seconds = self.elapsed_time % 60
         self.timer_label.setText(f"Time: {minutes:02d}:{seconds:02d}")
+
+    def import_puzzle(self):
+        # Get puzzle name from user
+        puzzle_name, ok = QInputDialog.getText(self, "Import Puzzle", 
+            "Enter puzzle name (e.g., sudoku0, sudoku1):\nAvailable in puzzles.py")
+        
+        if ok and puzzle_name:
+            try:
+                # Reload the puzzles module to get any updates
+                importlib.reload(puzzles)
+                # Get the puzzle array from the module
+                puzzle = getattr(puzzles, puzzle_name)
+                # Set the board
+                self.board.set_board(puzzle)
+                self.board.mark_original_cells()
+                self.output_text.setText(f"Successfully imported puzzle '{puzzle_name}'")
+            except AttributeError:
+                self.output_text.setText(f"Error: Puzzle '{puzzle_name}' not found in puzzles.py")
+            except Exception as e:
+                self.output_text.setText(f"Error importing puzzle: {str(e)}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
