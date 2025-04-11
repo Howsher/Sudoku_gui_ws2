@@ -10,7 +10,7 @@ Created on Sun Feb 12 12:48:04 2023
 import sys
 import os
 file_path = os.path.abspath(__file__)
-sys.path.append(file_path[:-9])
+sys.path.append(file_path[:-16])
 import matplotlib.pyplot as plt
 import numpy as np
 import copy

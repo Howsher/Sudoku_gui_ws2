@@ -27,7 +27,8 @@ class Rule1(Rules):
                     value = np.sum(puzzle.possible_values[row,col]) #value of the one check_for_one_number
                     if verbose: print('Rule 1 at ', row,col, 'number =', value)
                     self.update_for_new_value (puzzle,value,row,col)
-                    
+                    return True
+        return False
 
 
     def update_for_new_value(self,puzzle,value,row,col ):
