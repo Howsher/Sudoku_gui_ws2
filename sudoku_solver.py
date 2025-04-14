@@ -1,6 +1,16 @@
 #%%
 # This is a Windows Sudoku Solver application built with PySide6
 
+# Ensure Python uses the correct path
+import os
+import sys
+
+# Get the directory of this script and add it to sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+    print(f"Added {current_dir} to sys.path")
+
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QGridLayout, 
                               QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout,
                               QLabel, QComboBox, QStatusBar, QMessageBox, QSizePolicy,
