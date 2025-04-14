@@ -1,7 +1,8 @@
+#%%
+
 import numpy as np
 import itertools
 
-#%%
 verbose = True
 
 class Rules():

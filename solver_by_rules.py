@@ -9,14 +9,43 @@ Created on Sun Feb 12 12:48:04 2023
 #%%
 import sys
 import os
-file_path = os.path.abspath(__file__)
-sys.path.append(file_path[:-16])
+
+# Diagnostic information
+print("Python version:", sys.version)
+print("Python executable:", sys.executable)
+print("Python path:", sys.path)
+print("Current file:", __file__)
+print("Current directory:", os.getcwd())
+print("Directory of __file__:", os.path.dirname(os.path.abspath(__file__)))
+
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
 import itertools
-from puzzles import *
-import rules
+
+# Import puzzles and rules directly using their full path
+puzzles_path = r'c:\Users\HB\Python Projects\Sudoku_gui_ws2\puzzles.py'
+rules_path = r'c:\Users\HB\Python Projects\Sudoku_gui_ws2\rules.py'
+
+# Use importlib to import the modules from their full paths
+import importlib.util
+
+# Import puzzles module
+puzzles_spec = importlib.util.spec_from_file_location('puzzles', puzzles_path)
+puzzles = importlib.util.module_from_spec(puzzles_spec)
+sys.modules['puzzles'] = puzzles
+puzzles_spec.loader.exec_module(puzzles)
+
+# Import rules module
+rules_spec = importlib.util.spec_from_file_location('rules', rules_path)
+rules = importlib.util.module_from_spec(rules_spec)
+sys.modules['rules'] = rules
+rules_spec.loader.exec_module(rules)
+
+# Make all variables from puzzles available in this namespace
+for name in dir(puzzles):
+    if not name.startswith('_'):  # Skip private attributes
+        globals()[name] = getattr(puzzles, name)
 # test github in vs code
 
 
