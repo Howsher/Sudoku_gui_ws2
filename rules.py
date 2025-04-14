@@ -65,7 +65,7 @@ class Rule2(Rules):
                         if puzzle.possible_values[row,col,value-1] == value:
                             if verbose: print('Rule 2 row at ', row,col, 'number =', value)
                             self.update_for_new_value(puzzle,value,row,col)
-        
+                            return True
         #check in column              
         for col in range(9):
             for value in range(1,10):
@@ -74,7 +74,7 @@ class Rule2(Rules):
                         if puzzle.possible_values[row,col,value-1] == value:
                             if verbose: print('Rule 2 column at ', row,col, 'number =', value)
                             self.update_for_new_value(puzzle,value,row,col)
-        
+                            return True
         #check in square
         for sq in range (0,9):
             sq_poss_values = puzzle.possible_values_square(sq)
@@ -83,7 +83,9 @@ class Rule2(Rules):
                     row, col = [puzzle.get_square_coordinates(sq, r) for r in range(9) if value in sq_poss_values[r,:]][0]
                     if verbose: print('Rule 2 in square', sq,' at position', row,col, 'number =', value)
                     self.update_for_new_value(puzzle,value,row,col)
-
+                    return True
+        return False
+        
     def update_for_new_value(self,puzzle,value,row,col ):
         #updates the values and possible_values for puzzle given new value = value
         puzzle.stuck = False
@@ -124,7 +126,10 @@ class Rule3(Rules):
                 #print('Two numbers number =',num+1, 'row =', row, 'columns = ', col_pos)
                 if puzzle.same_square(row,col_pos[0],row,col_pos[1]):
                     self.update_two_in_same_square(puzzle,num+1,row,col_pos[0],row,col_pos[1])
-                    
+                    if puzzle.stuck == False:
+                        print('stuck', puzzle.stuck)
+                        return True
+        
         
         #check columns    
         for col in range(9):
@@ -138,6 +143,10 @@ class Rule3(Rules):
                 if puzzle.same_square(row_pos[0],col,row_pos[1],col):
                     self.update_two_in_same_square(puzzle,num+1,row_pos[0],col,row_pos[1],col)
                     #if verbose: print('found one with rule 3 col at ', row_pos,col, 'numbers =',num+1 )
+                    if puzzle.stuck == False:
+                        print('stuck', puzzle.stuck)
+                        return True
+        
         #check squares
         for sq_num in range(9):
             twos = self.two_numbers_in_square(puzzle,sq_num)
@@ -146,10 +155,13 @@ class Rule3(Rules):
                 r1,c1,r2,c2 = self.find_positions_of_nums(puzzle,sq_num,num+1) # returns [r1,c1,r2,c2]
                 if r1 == r2:
                     self.update_row_for_one_in_sq(puzzle,num+1,r1,c1,c2)
-                
+                    if puzzle.stuck == False:
+                        return True
                 if c1 == c2:
                     self.update_col_for_one_in_sq(puzzle,num+1,r1,r2,c1)
-                    
+                    if puzzle.stuck == False:
+                        return True
+        return False
 
         
 
@@ -178,17 +190,18 @@ class Rule3(Rules):
             if col !=col1 and col !=col2:
                 if puzzle.possible_values[row1,col,number-1] != 0:
                     puzzle.stuck = False
-                    if verbose: print('Rule 3 row in square at ', row1,col1, 'numbers =',number )
+                    if verbose: print('Rule 3 row in square at ', row1,col, 'numbers =',number )
                 puzzle.possible_values[row1,col,number-1] = 0
+                
 
     def update_col_for_one_in_sq(self,puzzle,number,row1,row2,col1):
         for row in range(9):
             if row !=row1 and row !=row2:
                 if puzzle.possible_values[row,col1,number-1] != 0:
                     puzzle.stuck = False
-                    if verbose: print('Rule 3 col in square at ', row1,col1, 'numbers =',number )
+                    if verbose: print('Rule 3 col in square at ', row,col1, 'numbers =',number )
                 puzzle.possible_values[row,col1,number-1] = 0
-
+                
             
 
                 
