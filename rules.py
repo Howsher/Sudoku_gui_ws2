@@ -226,9 +226,12 @@ class Rule4(Rules):
     def check_for_two_numbers(self,puzzle):
         
         self.check_rows(puzzle)
-        self.check_columns(puzzle)
-        self.check_squares(puzzle)
-
+        if puzzle.stuck == True:
+            self.check_columns(puzzle)
+        if puzzle.stuck == True:
+            self.check_squares(puzzle)
+     
+    
     def check_rows(self,puzzle):
         #check rows
         for row in range (9):
@@ -247,8 +250,8 @@ class Rule4(Rules):
                 matches =np.where((twos == twos[col]).all(axis=1))[0]
                 if matches.shape[0] == 2 and twos[col,0] != 0:  #checks that there is a match and not 0s
                     self.update_twos_row(puzzle,twos[col,0],twos[col,1], row, matches)
-                    if puzzle.stuck == False:
-                        return True
+            if puzzle.stuck == False:
+                return True
                             
     def check_columns(self, puzzle):
         #check columns
@@ -267,8 +270,8 @@ class Rule4(Rules):
                 matches =np.where((twos == twos[row]).all(axis=1))[0]
                 if matches.shape[0] == 2 and twos[row,0] != 0:  #checks that there is a match and not 0
                     self.update_twos_column(puzzle,twos[row,0],twos[row,1], col, matches)
-                    if puzzle.stuck == False:
-                        return True
+            if puzzle.stuck == False:
+                return True
          
     def check_squares(self,puzzle):           
         #check squares
@@ -288,8 +291,8 @@ class Rule4(Rules):
                 matches =np.where((twos == twos[cell]).all(axis=1))[0]
                 if matches.shape[0] == 2 and twos[cell,0] != 0:  #checks that there is a match and not 0s
                     self.update_twos_square(puzzle,twos[cell,0],twos[cell,1], square, matches)
-                    if puzzle.stuck == False:
-                        return True
+            if puzzle.stuck == False:
+                return True
                     
     def update_twos_row(self,puzzle,num_1,num_2,row,cols_matches):
         #updates possible_values
@@ -305,8 +308,8 @@ class Rule4(Rules):
                     if verbose: print('Rule 4 row at ', row,col, 'numbers =',num_1,num_2 ) 
                 puzzle.possible_values[row,col,num_1-1] = 0
                 puzzle.possible_values[row,col,num_2-1] = 0
-                if puzzle.stuck == False:
-                        return True
+                #if puzzle.stuck == False:
+                #    return True
             
                 
 
@@ -324,8 +327,10 @@ class Rule4(Rules):
                     if verbose: print('Rule 4 column at ', row,col, 'numbers =',num_1,num_2 )
                 puzzle.possible_values[row,col,num_1-1] = 0
                 puzzle.possible_values[row,col,num_2-1] = 0
-                if puzzle.stuck == False:
-                        return True
+                #if puzzle.stuck == False:
+                        #return True
+
+
     def update_twos_square(self,puzzle,num_1,num_2,square,cell_matches):
         #updates possible_values
         #inputs: num_1: int first of two values
@@ -343,8 +348,8 @@ class Rule4(Rules):
                         print('Rule 4 square at ', square,cell, 'numbers =',num_1,num_2 )
                 puzzle.possible_values[row,col,num_1-1] = 0
                 puzzle.possible_values[row,col,num_2-1] = 0
-                if puzzle.stuck == False:
-                        return True
+                #if puzzle.stuck == False:
+                        #return True
 
 class Rule5(Rules):
     """ 
