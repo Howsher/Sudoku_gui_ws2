@@ -129,8 +129,6 @@ class Rule3(Rules):
                     self.update_two_in_same_square(puzzle,num+1,row,col_pos[0],row,col_pos[1])
                     if puzzle.stuck == False:
                         return True
-        
-        
         #check columns    
         for col in range(9):
             #num_times is vector with number of times each digit occurs in row
