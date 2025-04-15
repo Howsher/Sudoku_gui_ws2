@@ -128,10 +128,7 @@ class Rule3(Rules):
                 if puzzle.same_square(row,col_pos[0],row,col_pos[1]):
                     self.update_two_in_same_square(puzzle,num+1,row,col_pos[0],row,col_pos[1])
                     if puzzle.stuck == False:
-                        print('stuck', puzzle.stuck)
                         return True
-        
-        
         #check columns    
         for col in range(9):
             #num_times is vector with number of times each digit occurs in row
@@ -145,7 +142,6 @@ class Rule3(Rules):
                     self.update_two_in_same_square(puzzle,num+1,row_pos[0],col,row_pos[1],col)
                     #if verbose: print('found one with rule 3 col at ', row_pos,col, 'numbers =',num+1 )
                     if puzzle.stuck == False:
-                        print('stuck', puzzle.stuck)
                         return True
         
         #check squares
