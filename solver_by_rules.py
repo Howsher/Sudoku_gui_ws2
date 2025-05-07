@@ -68,7 +68,7 @@ def draw_board(puzzle):
                         value = puzzle.possible_values[x, y, i]
                         ax.text(
                             y + 0.2 + (i % 3) * 0.3,
-                            x + 0.8 - (i // 3) * 0.3,
+                            x + 0.2 + (i // 3) * 0.3,
                             str(value),
                             fontsize=7,
                             ha="center",
@@ -343,7 +343,7 @@ class Puzzle:
                                 value = self.possible_values[x, y, i]
                                 ax.text(
                                     y + 0.2 + (i % 3) * 0.3,
-                                    x + 0.8 - (i // 3) * 0.3,
+                                    x + 0.2 + (i // 3) * 0.3,
                                     str(value),
                                     fontsize=7,
                                     ha="center",
