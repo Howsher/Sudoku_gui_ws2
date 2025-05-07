@@ -109,6 +109,8 @@ class Rule3(Rules):
     '''
         looks for only 2 of same number in a row or col in the same square
         then remove the number from elsewhere in the square
+        I THINK THIS LOOKS FOR only 2 of same number in a square in the same row or col in the square
+        then remove the number from elsewhere in the row or column 
     '''
     def __init__(self):
         pass
