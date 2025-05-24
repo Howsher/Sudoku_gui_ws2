@@ -4,6 +4,42 @@
 # Ensure Python uses the correct path
 import os
 import sys
+import shutil
+
+# Initialize Qt plugins if running as executable
+def init_qt_plugins():
+    try:
+        # Only run this code when frozen by cx_Freeze
+        if getattr(sys, 'frozen', False):
+            # Get executable directory
+            exec_dir = os.path.dirname(sys.executable)
+            
+            # Create platforms directory if it doesn't exist
+            platforms_dir = os.path.join(exec_dir, "platforms")
+            if not os.path.exists(platforms_dir):
+                os.makedirs(platforms_dir)
+                
+            # Look for Qt plugins in common locations
+            conda_path = os.environ.get('CONDA_PREFIX')
+            if conda_path:
+                # Try common locations for the plugins
+                qwindows_paths = [
+                    os.path.join(conda_path, "Library", "plugins", "platforms", "qwindows.dll"),
+                    os.path.join(conda_path, "Lib", "site-packages", "PySide6", "plugins", "platforms", "qwindows.dll"),
+                ]
+                
+                # Copy qwindows.dll if found
+                for src_path in qwindows_paths:
+                    if os.path.exists(src_path):
+                        dst_path = os.path.join(platforms_dir, "qwindows.dll")
+                        print(f"Copying Qt plugin from {src_path} to {dst_path}")
+                        shutil.copy2(src_path, dst_path)
+                        break
+    except Exception as e:
+        print(f"Error initializing Qt plugins: {e}")
+
+# Call the initialization function
+init_qt_plugins()
 
 # Get the directory of this script and add it to sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
